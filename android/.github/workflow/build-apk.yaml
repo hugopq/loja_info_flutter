@@ -1,0 +1,49 @@
+name: Build APK (Script Sala de Aula)
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch: # Permite executar manualmente no site do GitHub
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 1. Obter o código
+        uses: actions/checkout@v4
+      
+      - name: 2. Configurar Java 17 (Estável para Flutter)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+      
+      - name: 3. Configurar Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.27.0' # ALTERA AQUI se a versão da sala for diferente (ex: '3.24.0')
+          channel: 'stable'
+      
+      - name: 4. Instalar dependências
+        run: flutter pub get
+      
+      - name: 5. 🪄 CORREÇÃO MÁGICA: Forçar Gradle 8.9
+        # Este passo substitui qualquer versão de Gradle (como a 9.x) pela 8.9, 
+        # que é 100% compatível e evita o erro de "groovy.xml.QName"
+        run: |
+          echo "A forçar a versão do Gradle para 8.9..."
+          sed -i 's/gradle-.*-bin\.zip/gradle-8.9-all.zip/g' android/gradle/wrapper/gradle-wrapper.properties
+          sed -i 's/gradle-.*-all\.zip/gradle-8.9-all.zip/g' android/gradle/wrapper/gradle-wrapper.properties
+          echo "Versão atual do Gradle:"
+          cat android/gradle/wrapper/gradle-wrapper.properties
+      
+      - name: 6. Compilar APK
+        run: flutter build apk --release --split-per-abi
+      
+      - name: 7. Guardar o APK para download
+        uses: actions/upload-artifact@v4
+        with:
+          name: APK-Para-Alunos
+          path: build/app/outputs/flutter-apk/app-*-release.apk
+          retention-days: 7
