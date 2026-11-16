@@ -1,13 +1,32 @@
 workflows:
-  build-apk:
-    name: Build APK Aulas
+  build-apk-alunos:
+    name: Build APK Aulas (Correção Automática)
     environment:
-      # Usa a versão estável mais recente, que é compatível com o Gradle 9+
-      flutter: stable 
+      flutter: stable
     scripts:
-      - name: Obter dependências
+      - name: 🪄 Corrigir desalinhamento de versões do Gradle/AGP
+        script: |
+          echo "A verificar e corrigir versões para compatibilidade com Flutter recente..."
+          
+          # 1. Atualizar o Gradle Wrapper para 9.5.0 (elimina o aviso amarelo)
+          sed -i 's/gradle-.*-all\.zip/gradle-9.5.0-all.zip/g' android/gradle/wrapper/gradle-wrapper.properties
+          
+          # 2. Atualizar o Android Gradle Plugin (AGP) para 9.2.0 no settings.gradle.kts (padrão novo)
+          # Isto resolve o erro: "AGP version 9.1.0 is lower than minimum supported 9.1.1"
+          sed -i 's/id("com\.android\.application") version "[0-9.]*"/id("com.android.application") version "9.2.0"/g' android/settings.gradle.kts
+          
+          # 3. Fallback: Atualizar AGP no build.gradle.kts (caso o projeto use o template antigo)
+          sed -i 's/classpath("com\.android\.tools\.build:gradle:.*")/classpath("com.android.tools.build:gradle:9.2.0")/g' android/build.gradle.kts
+          sed -i "s/classpath 'com.android.tools.build:gradle:.*'/classpath 'com.android.tools.build:gradle:9.2.0'/g" android/build.gradle
+          
+          echo "✅ Versões harmonizadas com sucesso!"
+          cat android/gradle/wrapper/gradle-wrapper.properties | grep distributionUrl
+
+      - name: Instalar dependências
         script: flutter pub get
+        
       - name: Compilar APK
         script: flutter build apk --release --split-per-abi
+        
     artifacts:
       - build/app/outputs/flutter-apk/*.apk
