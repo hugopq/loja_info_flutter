@@ -1,26 +1,34 @@
 workflows:
   build-apk-alunos:
-    name: Build APK Aulas (Correção Automática)
+    name: Build APK Aulas (Versão Estável)
     environment:
-      flutter: stable
+      # FIXAR a versão evita bugs de templates recentes. 
+      # A 3.27.4 é extremamente estável e compatível.
+      flutter: 3.27.4 
     scripts:
-      - name: 🪄 Corrigir desalinhamento de versões do Gradle/AGP
+      - name: 🪄 Correção Forçada de Versões
         script: |
-          echo "A verificar e corrigir versões para compatibilidade com Flutter recente..."
+          echo "=== INÍCIO DA CORREÇÃO ==="
           
-          # 1. Atualizar o Gradle Wrapper para 9.5.0 (elimina o aviso amarelo)
+          # 1. Atualizar Gradle para 9.5.0 (como o aviso pede)
           sed -i 's/gradle-.*-all\.zip/gradle-9.5.0-all.zip/g' android/gradle/wrapper/gradle-wrapper.properties
           
-          # 2. Atualizar o Android Gradle Plugin (AGP) para 9.2.0 no settings.gradle.kts (padrão novo)
-          # Isto resolve o erro: "AGP version 9.1.0 is lower than minimum supported 9.1.1"
-          sed -i 's/id("com\.android\.application") version "[0-9.]*"/id("com.android.application") version "9.2.0"/g' android/settings.gradle.kts
+          # 2. Substituir EXATAMENTE a versão 9.1.0 pela 9.2.0 nos ficheiros .kts
+          sed -i 's/version "9\.1\.0"/version "9.2.0"/g' android/settings.gradle.kts
+          sed -i 's/version "9\.1\.0"/version "9.2.0"/g' android/build.gradle.kts
           
-          # 3. Fallback: Atualizar AGP no build.gradle.kts (caso o projeto use o template antigo)
-          sed -i 's/classpath("com\.android\.tools\.build:gradle:.*")/classpath("com.android.tools.build:gradle:9.2.0")/g' android/build.gradle.kts
-          sed -i "s/classpath 'com.android.tools.build:gradle:.*'/classpath 'com.android.tools.build:gradle:9.2.0'/g" android/build.gradle
+          # 3. Fallback para ficheiros .gradle antigos (sem .kts)
+          sed -i "s/version '9\.1\.0'/version '9.2.0'/g" android/settings.gradle
+          sed -i "s/version '9\.1\.0'/version '9.2.0'/g" android/build.gradle
           
-          echo "✅ Versões harmonizadas com sucesso!"
+          echo "=== VERIFICAÇÃO: Conteúdo atualizado ==="
+          echo "--- gradle-wrapper.properties ---"
           cat android/gradle/wrapper/gradle-wrapper.properties | grep distributionUrl
+          echo "--- settings.gradle.kts (linhas com com.android) ---"
+          grep "com.android.application" android/settings.gradle.kts || echo "Não encontrado em settings.gradle.kts"
+          echo "--- build.gradle.kts (linhas com com.android) ---"
+          grep "com.android.application" android/build.gradle.kts || echo "Não encontrado em build.gradle.kts"
+          echo "=== FIM DA CORREÇÃO ==="
 
       - name: Instalar dependências
         script: flutter pub get
