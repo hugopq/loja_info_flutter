@@ -3,18 +3,18 @@ name: Build Android APK
 on:
   push:
     branches: [ main ]
-  workflow_dispatch: # Permite correr manualmente na aba Actions do GitHub
+  workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout do código
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Configurar Java (JDK 21)
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '21'
@@ -31,7 +31,7 @@ jobs:
           flutter build apk --release
 
       - name: Guardar APK nos Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: app-release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
